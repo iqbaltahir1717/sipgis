@@ -1,0 +1,209 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+class Skripsi extends CI_Controller
+{
+  function __construct()
+  {
+    parent::__construct();
+    error_reporting(0);
+    $this->load->model("m_skripsi");
+    $this->load->model("m_mahasiswa");
+    $this->load->model("m_dosen");
+    $this->load->model("m_setting");
+    $this->load->library('upload');
+    if (!($this->session->userdata('user_id'))) {
+      redirect('home');
+    }
+  }
+
+  public function index()
+  {
+    $setting['settings_app'] = $this->m_setting->fetch_setting();
+    if ($this->session->userdata('group_id') == 3) { 
+      $data['skripsi'] = $this->m_skripsi->fetch_data_permahasiswa($this->session->userdata('id'));
+    }else{
+      $data['skripsi'] = $this->m_skripsi->fetch_data();
+    }
+    
+    $data['mahasiswa'] = $this->m_mahasiswa->fetch_data();
+    $data['dosen'] = $this->m_dosen->fetch_data();
+    $this->load->view("attribute/header", $setting);
+    $this->load->view("attribute/menus", $setting);
+    $this->load->view("admin/master_data/skripsi/skripsi", $data);
+    $this->load->view("attribute/footer", $setting);
+  }
+
+  public function add() {
+    $setting['settings_app'] = $this->m_setting->fetch_setting();
+    $data['skripsi'] = $this->m_skripsi->fetch_data();
+    $data['mahasiswa'] = $this->m_mahasiswa->fetch_data();
+    $data['dosen'] = $this->m_dosen->fetch_data();
+    $this->load->view("attribute/header", $setting);
+    $this->load->view("attribute/menus", $setting);
+    $this->load->view("admin/master_data/skripsi/skripsi_add", $data);
+    $this->load->view("attribute/footer", $setting);
+  }
+
+  public function update() {
+    $setting['settings_app'] = $this->m_setting->fetch_setting();
+    $data['skripsi'] = $this->m_skripsi->get($this->uri->segment(3));
+    $data['mahasiswa'] = $this->m_mahasiswa->fetch_data();
+    $data['dosen'] = $this->m_dosen->fetch_data();
+    $this->load->view("attribute/header", $setting);
+    $this->load->view("attribute/menus", $setting);
+    $this->load->view("admin/master_data/skripsi/skripsi_edit", $data);
+    $this->load->view("attribute/footer", $setting);
+  }
+
+  public function input()
+  {
+    $config['upload_path']   = './upload/pengesahan_pembimbing/';
+    $config['allowed_types'] = "pdf|doc|docx";
+    $config['overwrite']     = "true";
+    $config['max_size']      = "20000000000";
+    $config['max_width']     = "10000";
+    $config['max_height']    = "10000";
+    $config['file_name']     = 'pengesahan-pembimbing-' . $this->input->post('mahasiswa_nim');
+    $this->upload->initialize($config);
+    $this->upload->do_upload('pengesahan_pembimbing');
+    $dat1                                           = $this->upload->data();
+    $data['skripsi_pengesahan_pembimbing']          = $dat1['file_name'];
+
+    $config2['upload_path']   = './upload/pengesahan_penguji/';
+    $config2['allowed_types'] = "pdf|doc|docx";
+    $config2['overwrite']     = "true";
+    $config2['max_size']      = "20000000000";
+    $config2['max_width']     = "10000";
+    $config2['max_height']    = "10000";
+    $config2['file_name']     = 'pengesahan-penguji-' . $this->input->post('mahasiswa_nim');
+    $this->upload->initialize($config2);
+    $this->upload->do_upload('pengesahan_penguji');
+    $dat2                                        = $this->upload->data();
+    $data['skripsi_pengesahan_penguji']          = $dat2['file_name'];;
+
+    $config3['upload_path']   = './upload/skripsi_full/';
+    $config3['allowed_types'] = "pdf|doc|docx";
+    $config3['overwrite']     = "true";
+    $config3['max_size']      = "20000000000";
+    $config3['max_width']     = "10000";
+    $config3['max_height']    = "10000";
+    $config3['file_name']     = 'skripsi-full-' . $this->input->post('mahasiswa_nim');
+    $this->upload->initialize($config3);
+    $this->upload->do_upload('skripsi_full');
+    $dat3                                           = $this->upload->data();
+    $data['skripsi_file_full']          = $dat3['file_name'];
+
+    $config4['upload_path']   = './upload/skripsi_sebagian/';
+    $config4['allowed_types'] = "pdf|doc|docx";
+    $config4['overwrite']     = "true";
+    $config4['max_size']      = "20000000000";
+    $config4['max_width']     = "10000";
+    $config4['max_height']    = "10000";
+    $config4['file_name']     = 'skripsi-sebagian-' . $this->input->post('mahasiswa_nim');
+    $this->upload->initialize($config4);
+    $this->upload->do_upload('skripsi_sebagian');
+    $dat4                                        = $this->upload->data();
+    $data['skripsi_file_separuh']          = $dat4['file_name'];;
+    
+    if ($this->session->userdata('group_id') == 3) { 
+      $data['mahasiswa_nim']            = $this->session->userdata('id');
+    }else{
+      $data['mahasiswa_nim']            = $this->input->post('mahasiswa_nim');
+    }
+    
+    $data['skripsi_judul']            = $this->input->post('skripsi_judul');
+    $data['skripsi_waktu_selesai']            = $this->input->post('skripsi_waktu_selesai');
+    $data['skripsi_upload_datetime']            = date('Y-m-d H:i:s');
+    $data['skripsi_pembimbing_1']            = $this->input->post('skripsi_pembimbing_1');
+    $data['skripsi_pembimbing_2']            = $this->input->post('skripsi_pembimbing_2');
+    $data['skripsi_penguji_1']            = $this->input->post('skripsi_penguji_1');
+    $data['skripsi_penguji_2']            = $this->input->post('skripsi_penguji_2');
+    $data['skripsi_penguji_3']            = $this->input->post('skripsi_penguji_3');
+    $data['skripsi_status']            = 0;
+    $data['skripsi_komentar']            = '';
+    $this->session->set_flashdata('add', 'Berhasil Tambah skripsi <b>' . $data['mahasiswa_nim'] . '</b>');
+    $this->m_skripsi->input($data);
+
+
+    redirect('skripsi');
+  }
+
+  public function edit()
+  {
+    $config['upload_path']   = './upload/pengesahan_pembimbing/';
+    $config['allowed_types'] = "pdf|doc|docx";
+    $config['overwrite']     = "true";
+    $config['max_size']      = "20000000000";
+    $config['max_width']     = "10000";
+    $config['max_height']    = "10000";
+    $config['file_name']     = 'pengesahan-pembimbing-' . $this->input->post('mahasiswa_nim');
+    $this->upload->initialize($config);
+    $this->upload->do_upload('pengesahan_pembimbing');
+    $dat1                                           = $this->upload->data();
+    $data['skripsi_pengesahan_pembimbing']          = $dat1['file_name'];
+
+    $config2['upload_path']   = './upload/pengesahan_penguji/';
+    $config2['allowed_types'] = "pdf|doc|docx";
+    $config2['overwrite']     = "true";
+    $config2['max_size']      = "20000000000";
+    $config2['max_width']     = "10000";
+    $config2['max_height']    = "10000";
+    $config2['file_name']     = 'pengesahan-penguji-' . $this->input->post('mahasiswa_nim');
+    $this->upload->initialize($config2);
+    $this->upload->do_upload('pengesahan_penguji');
+    $dat2                                        = $this->upload->data();
+    $data['skripsi_pengesahan_penguji']          = $dat2['file_name'];;
+
+    $config3['upload_path']   = './upload/skripsi_full/';
+    $config3['allowed_types'] = "pdf|doc|docx";
+    $config3['overwrite']     = "true";
+    $config3['max_size']      = "20000000000";
+    $config3['max_width']     = "10000";
+    $config3['max_height']    = "10000";
+    $config3['file_name']     = 'skripsi-full-' . $this->input->post('mahasiswa_nim');
+    $this->upload->initialize($config3);
+    $this->upload->do_upload('skripsi_full');
+    $dat3                                           = $this->upload->data();
+    $data['skripsi_file_full']          = $dat3['file_name'];
+
+    $config4['upload_path']   = './upload/skripsi_sebagian/';
+    $config4['allowed_types'] = "pdf|doc|docx";
+    $config4['overwrite']     = "true";
+    $config4['max_size']      = "20000000000";
+    $config4['max_width']     = "10000";
+    $config4['max_height']    = "10000";
+    $config4['file_name']     = 'skripsi-sebagian-' . $this->input->post('mahasiswa_nim');
+    $this->upload->initialize($config4);
+    $this->upload->do_upload('skripsi_sebagian');
+    $dat4                                        = $this->upload->data();
+    $data['skripsi_file_separuh']          = $dat4['file_name'];;
+
+    $data['skripsi_id']            = $this->input->post('skripsi_id');
+    if ($this->session->userdata('group_id') == 3) { 
+      $data['mahasiswa_nim']            = $this->session->userdata('id');
+    }else{
+      $data['mahasiswa_nim']            = $this->input->post('mahasiswa_nim');
+    }
+    $data['skripsi_judul']            = $this->input->post('skripsi_judul');
+    $data['skripsi_waktu_selesai']            = $this->input->post('skripsi_waktu_selesai');
+    $data['skripsi_upload_datetime']            = date('Y-m-d H:i:s');
+    $data['skripsi_pembimbing_1']            = $this->input->post('skripsi_pembimbing_1');
+    $data['skripsi_pembimbing_2']            = $this->input->post('skripsi_pembimbing_2');
+    $data['skripsi_penguji_1']            = $this->input->post('skripsi_penguji_1');
+    $data['skripsi_penguji_2']            = $this->input->post('skripsi_penguji_2');
+    $data['skripsi_penguji_3']            = $this->input->post('skripsi_penguji_3');
+    $data['skripsi_status']            = 0;
+    $data['skripsi_komentar']            = '';
+    $this->session->set_flashdata('update', 'Berhasil Edit skripsi <b>' . $data['mahasiswa_nim'] . '</b>');
+    $this->m_skripsi->edit($data);
+
+    redirect('skripsi');
+  }
+
+  public function delete()
+  {
+    $this->session->set_flashdata('delete', 'skripsi <b>' . $this->input->post('skripsi_id') . '</b> telah dihapus !');
+    $this->m_skripsi->delete($this->input->post('skripsi_id'));
+    redirect('skripsi');
+  }
+}
